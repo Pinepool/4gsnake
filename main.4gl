@@ -189,6 +189,8 @@ PRIVATE FUNCTION _initialize()
     LET key_down = fgl_keyval("DOWN")
     LET key_right = fgl_keyval("RIGHT")
     LET key_left = fgl_keyval("LEFT")
+    
+    LET is_game_running = TRUE
 
 END FUNCTION
 
