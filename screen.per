@@ -1,0 +1,39 @@
+SCREEN
+{
+--------------------
+       SNAKE
+--------------------
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+[f01                 ]
+--------------------
+}
+END
+
+ATTRIBUTES
+    EDIT f01 = FORMONLY.row_01, NOENTRY;
+END
+
+INSTRUCTIONS
+    SCREEN RECORD sr_display[20]
+    (
+        FORMONLY.row_01
+    );
+END

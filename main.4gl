@@ -23,6 +23,8 @@ PRIVATE CONSTANT TILE_SNAKE_HEAD = "▒"
 PRIVATE CONSTANT TILE_SNAKE_BODY = "░"
 PRIVATE CONSTANT TILE_FRUIT = "▓"
 
+PRIVATE CONSTANT TICK_SPEED = 1
+
 PUBLIC TYPE COORDINATE RECORD
     x INTEGER,
     y INTEGER
@@ -39,15 +41,77 @@ DEFINE
     fruits DYNAMIC ARRAY OF COORDINATE,
     is_game_running BOOLEAN,
     key_up, key_down, key_right, key_left INTEGER,
+	key_q INTEGER,
     x_inner_max INTEGER,
-    y_inner_max INTEGER
+    y_inner_max INTEGER,
+	screen_rows DYNAMIC ARRAY OF STRING
 
 MAIN
 
     WHENEVER ERROR STOP
-    CALL _run_game()
+	
+	OPEN WINDOW main_window WITH FORM "screen"
+    
+	CALL _run_dialog()
+	
+	#CALL _run_game()
 
 END MAIN
+
+
+
+PRIVATE FUNCTION _run_dialog()
+
+	DIALOG ATTRIBUTES (UNBUFFERED)
+
+		BEFORE DIALOG
+			CALL _initialize()
+			#CALL _run_game()
+		
+		DISPLAY ARRAY screen_rows TO sr_display.*
+		END DISPLAY
+		
+		ON ACTION set_direction_up ATTRIBUTES(ACCELERATOR="Up")
+			LET player.direction = DIRECTION_UP
+		ON ACTION set_direction_down ATTRIBUTES(ACCELERATOR="Down")
+			LET player.direction = DIRECTION_DOWN
+		ON ACTION set_direction_left ATTRIBUTES(ACCELERATOR="Left")
+			LET player.direction = DIRECTION_LEFT
+		ON ACTION set_direction_right ATTRIBUTES(ACCELERATOR="Right")
+			LET player.direction = DIRECTION_RIGHT
+		
+		ON TIMER TICK_SPEED
+			IF (is_game_running) THEN
+				CALL _move_snake()
+				CALL _display()
+				CALL ui.Interface.refresh()
+				SLEEP 1
+			ELSE
+				CALL _game_over()
+			END IF
+		
+		ON ACTION close
+			EXIT DIALOG
+
+	END DIALOG
+
+END FUNCTION
+
+
+
+PRIVATE FUNCTION _run_game()
+
+    CALL _initialize()
+
+    WHILE (is_game_running)
+        CALL _move_snake()
+        CALL _display()
+        SLEEP 1
+    END WHILE
+
+    CALL _game_over()
+
+END FUNCTION
 
 
 
@@ -82,7 +146,8 @@ PRIVATE FUNCTION _display()
         FOR j = 1 TO screen_length
             LET row = row, screen[j,i]
         END FOR
-        DISPLAY row
+		LET screen[i] = row
+        #DISPLAY row
     END FOR
 
 END FUNCTION
@@ -154,22 +219,6 @@ END FUNCTION
 
 
 
-PRIVATE FUNCTION _run_game()
-
-    CALL _initialize()
-
-    WHILE (is_game_running)
-        CALL _move_snake()
-        CALL _display()
-        SLEEP 1
-    END WHILE
-
-    CALL _game_over()
-
-END FUNCTION
-
-
-
 PRIVATE FUNCTION _initialize()
     DEFINE
         start_position COORDINATE,
@@ -190,6 +239,8 @@ PRIVATE FUNCTION _initialize()
     LET key_right = fgl_keyval("RIGHT")
     LET key_left = fgl_keyval("LEFT")
     
+	LET key_q = fgl_keyval("CONTROL-Q")
+	
     LET is_game_running = TRUE
 
 END FUNCTION
@@ -204,29 +255,29 @@ END FUNCTION
 
 PRIVATE FUNCTION _move_snake()
 
-    LET player.direction = fgl_lastkey()
+    #LET player.direction = fgl_lastkey()
 
     CASE player.direction
-        #WHEN player.direction = DIRECTION_UP
-        WHEN player.direction = key_up
+        WHEN player.direction = DIRECTION_UP
+        #WHEN player.direction = key_up
             LET player.segments[1].y = player.segments[1].y + 1
             IF (player.segments[1].y > Y_MAXIMUM) THEN
                 CALL _end_game()
             END IF
-        #WHEN player.direction = DIRECTION_DOWN
-        WHEN player.direction = key_down
+        WHEN player.direction = DIRECTION_DOWN
+        #WHEN player.direction = key_down
             LET player.segments[1].y = player.segments[1].y - 1
             IF (player.segments[1].y <= 0) THEN
                 CALL _end_game()
             END IF
-        #WHEN player.direction = DIRECTION_RIGHT
-        WHEN player.direction = key_right
+        WHEN player.direction = DIRECTION_RIGHT
+        #WHEN player.direction = key_right
             LET player.segments[1].x = player.segments[1].x + 1
             IF (player.segments[1].x > X_MAXIMUM) THEN
                 CALL _end_game()
             END IF
-        #WHEN player.direction = DIRECTION_LEFT
-        WHEN player.direction = key_left
+        WHEN player.direction = DIRECTION_LEFT
+        #WHEN player.direction = key_left
             LET player.segments[1].x = player.segments[1].x - 1
             IF (player.segments[1].x <= 0) THEN
                 CALL _end_game()
