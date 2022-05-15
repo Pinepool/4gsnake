@@ -23,22 +23,24 @@ PRIVATE CONSTANT TILE_SNAKE_HEAD = "▒"
 PRIVATE CONSTANT TILE_SNAKE_BODY = "░"
 PRIVATE CONSTANT TILE_FRUIT = "▓"
 
-PUBLIC TYPE COORDINATE
+PUBLIC TYPE COORDINATE RECORD
     x INTEGER,
     y INTEGER
-END TYPE
+END RECORD
 
-PUBLIC TYPE SNAKE
+PUBLIC TYPE SNAKE RECORD
     segments DYNAMIC ARRAY OF COORDINATE,
     direction INTEGER
-END TYPE
+END RECORD
 
 DEFINE
     score INTEGER,
     player SNAKE,
     fruits DYNAMIC ARRAY OF COORDINATE,
     is_game_running BOOLEAN,
-    key_up, key_down, key_right, key_left INTEGER
+    key_up, key_down, key_right, key_left INTEGER,
+    x_inner_max INTEGER,
+    y_inner_max INTEGER
 
 MAIN
 
@@ -53,8 +55,6 @@ PRIVATE FUNCTION _display()
     DEFINE
         i INTEGER,
         j INTEGER,
-        x_inner_max INTEGER,
-        y_inner_max INTEGER,
         screen DYNAMIC ARRAY WITH DIMENSION 2 OF CHAR,
         screen_height INTEGER,
         screen_length INTEGER,
@@ -65,7 +65,7 @@ PRIVATE FUNCTION _display()
 
     CALL _construct_borders(screen)
 
-    FOR i = 2 TO y_inner_max STEP
+    FOR i = 2 TO y_inner_max
         FOR j = 2 TO x_inner_max
             LET screen[j, i] = TILE_MAP
         END FOR
@@ -133,7 +133,7 @@ PRIVATE FUNCTION _construct_borders(
     )
 
     DEFINE
-        i INTEGER,
+        i INTEGER
 
     LET screen[1,1] = BORDER_BOTTOM_LEFT_CHAR
     LET screen[X_MAXIMUM, 1] = BORDER_BOTTOM_RIGHT_CHAR
@@ -178,7 +178,7 @@ PRIVATE FUNCTION _initialize()
     LET start_position.x = X_MAXIMUM / 2
     LET start_position.y = Y_MAXIMUM / 2
 
-    LET player.segments[1] = start_position
+    LET player.segments[1].* = start_position.*
 
     FOR i = 1 TO MAX_FRUITS
         #CALL fruits.appendElement()
@@ -204,30 +204,30 @@ PRIVATE FUNCTION _move_snake()
 
     LET player.direction = fgl_lastkey()
 
-    CASE direction
+    CASE player.direction
         #WHEN player.direction = DIRECTION_UP
         WHEN player.direction = key_up
             LET player.segments[1].y = player.segments[1].y + 1
             IF (player.segments[1].y > Y_MAXIMUM) THEN
-                _end_game()
+                CALL _end_game()
             END IF
         #WHEN player.direction = DIRECTION_DOWN
         WHEN player.direction = key_down
             LET player.segments[1].y = player.segments[1].y - 1
             IF (player.segments[1].y <= 0) THEN
-                _end_game()
+                CALL _end_game()
             END IF
         #WHEN player.direction = DIRECTION_RIGHT
         WHEN player.direction = key_right
             LET player.segments[1].x = player.segments[1].x + 1
             IF (player.segments[1].x > X_MAXIMUM) THEN
-                _end_game()
+                CALL _end_game()
             END IF
         #WHEN player.direction = DIRECTION_LEFT
         WHEN player.direction = key_left
             LET player.segments[1].x = player.segments[1].x - 1
             IF (player.segments[1].x <= 0) THEN
-                _end_game()
+                CALL _end_game()
             END IF
         #OTHERWISE
     END CASE
@@ -260,14 +260,14 @@ PRIVATE FUNCTION _check_fruits()
         i INTEGER,
         fruits_length INTEGER
 
-    LET fruits_length = _fruits.getLength()
+    LET fruits_length = fruits.getLength()
 
     FOR i = 1 TO fruits_length
-        IF (_is_coordinate_equal(player.segments[1], fruits[i])) THEN
+        IF (_is_coordinate_equal(player.segments[1].*, fruits[i].*)) THEN
             CALL _snake_add_segment()
-            CALL _fruits.deleteElement(i)
+            CALL fruits.deleteElement(i)
             CALL _add_fruit()
-            END FOR
+            EXIT FOR
         END IF
     END FOR
 
@@ -302,18 +302,18 @@ PRIVATE FUNCTION _add_fruit()
     LET valid_position = FALSE
     CALL fruits.appendElement()
 
-    WHILE (!valid_position)
-        LET position.x = rand(X_MAXIMUM)
-        LET position.y = rand(Y_MAXIMUM)
+    WHILE (NOT valid_position)
+        LET position.x = util.Math.rand(X_MAXIMUM)
+        LET position.y = util.Math.rand(Y_MAXIMUM)
 
-        IF (!_in_snake(position)) THEN
-            IF (!_in_fruits(position)) THEN
+        IF (NOT _in_snake(position.*)) THEN
+            IF (NOT _in_fruits(position.*)) THEN
                 LET valid_position = TRUE
             END IF
         END IF
     END WHILE
 
-    LET fruits[fruits.getLength()] = position
+    LET fruits[fruits.getLength()].* = position.*
     CALL _update_score()
 END FUNCTION
 
@@ -329,7 +329,7 @@ PRIVATE FUNCTION _in_snake(position COORDINATE) RETURNS BOOLEAN
     LET snake_length = player.segments.getLength()
 
     FOR i = 1 TO snake_length
-        IF (_is_coordinate_equal(position, player.segments[i])) THEN
+        IF (_is_coordinate_equal(position.*, player.segments[i].*)) THEN
             RETURN TRUE
         END IF
     END FOR
@@ -347,7 +347,7 @@ PRIVATE FUNCTION _in_fruits(position COORDINATE) RETURNS BOOLEAN
     LET fruits_length = fruits.getLength()
 
     FOR i = 1 TO fruits_length
-        IF (_is_coordinate_equal(position, fruits[i])) THEN
+        IF (_is_coordinate_equal(position.*, fruits[i].*)) THEN
             RETURN TRUE
         END IF
     END FOR
