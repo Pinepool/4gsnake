@@ -142,12 +142,12 @@ PRIVATE FUNCTION _construct_borders(
     
     FOR i = 2 TO y_inner_max
         LET screen[1, i] = BORDER_VERTICAL_CHAR
-        LET screen[x_inner_max, i] = BORDER_VERTICAL_CHAR
+        LET screen[X_MAXIMUM, i] = BORDER_VERTICAL_CHAR
     END FOR
 
     FOR i = 2 TO x_inner_max
         LET screen[i, 1] = BORDER_HORIZONTAL_CHAR
-        LET screen[i, y_inner_max] = BORDER_HORIZONTAL_CHAR
+        LET screen[i, Y_MAXIMUM] = BORDER_HORIZONTAL_CHAR
     END FOR
 
 END FUNCTION
