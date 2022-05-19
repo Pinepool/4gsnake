@@ -4,19 +4,25 @@ IMPORT util
 PUBLIC CONSTANT X_MAXIMUM = 20
 PUBLIC CONSTANT Y_MAXIMUM = 20
 
-PUBLIC CONSTANT MAX_FRUITS = 1
+PUBLIC CONSTANT MAX_FRUITS = 3
 
 PRIVATE CONSTANT DIRECTION_UP = 0
 PRIVATE CONSTANT DIRECTION_DOWN = 1
 PRIVATE CONSTANT DIRECTION_RIGHT = 2
 PRIVATE CONSTANT DIRECTION_LEFT = 3
 
-PRIVATE CONSTANT BORDER_HORIZONTAL_CHAR = "═"
-PRIVATE CONSTANT BORDER_VERTICAL_CHAR = "║"
-PRIVATE CONSTANT BORDER_TOP_LEFT_CHAR = "╔"
-PRIVATE CONSTANT BORDER_TOP_RIGHT_CHAR = "╗"
-PRIVATE CONSTANT BORDER_BOTTOM_LEFT_CHAR = "╚"
-PRIVATE CONSTANT BORDER_BOTTOM_RIGHT_CHAR = "╝"
+-- PRIVATE CONSTANT BORDER_HORIZONTAL_CHAR = "═"
+-- PRIVATE CONSTANT BORDER_VERTICAL_CHAR = "║"
+-- PRIVATE CONSTANT BORDER_TOP_LEFT_CHAR = "╔"
+-- PRIVATE CONSTANT BORDER_TOP_RIGHT_CHAR = "╗"
+-- PRIVATE CONSTANT BORDER_BOTTOM_LEFT_CHAR = "╚"
+-- PRIVATE CONSTANT BORDER_BOTTOM_RIGHT_CHAR = "╝"
+PRIVATE CONSTANT BORDER_HORIZONTAL_CHAR = "+"
+PRIVATE CONSTANT BORDER_VERTICAL_CHAR = "|"
+PRIVATE CONSTANT BORDER_TOP_LEFT_CHAR = "/"
+PRIVATE CONSTANT BORDER_TOP_RIGHT_CHAR = "\\"
+PRIVATE CONSTANT BORDER_BOTTOM_LEFT_CHAR = "\\"
+PRIVATE CONSTANT BORDER_BOTTOM_RIGHT_CHAR = "/"
 
 #█▓▒░
 PRIVATE CONSTANT TILE_MAP = "_"
@@ -31,7 +37,7 @@ PUBLIC TYPE COORDINATE RECORD
     y INTEGER
 END RECORD
 
-PUBLIC TYPE SNAKE RECORD
+PRIVATE TYPE SNAKE RECORD
     segments DYNAMIC ARRAY OF COORDINATE,
     direction INTEGER
 END RECORD
@@ -45,7 +51,8 @@ DEFINE
     key_q INTEGER,
     x_inner_max INTEGER,
     y_inner_max INTEGER,
-    screen_rows DYNAMIC ARRAY OF STRING
+    screen_rows DYNAMIC ARRAY OF STRING,
+    prev_position COORDINATE
 
 MAIN
 
@@ -73,19 +80,16 @@ PRIVATE FUNCTION _run_dialog()
             
             ON ACTION set_direction_up ATTRIBUTES(ACCELERATOR="Up")
                 LET player.direction = DIRECTION_UP
-                DISPLAY "UP"
             ON ACTION set_direction_down ATTRIBUTES(ACCELERATOR="Down")
                 LET player.direction = DIRECTION_DOWN
-                DISPLAY "DOWN"
             ON ACTION set_direction_left ATTRIBUTES(ACCELERATOR="Left")
                 LET player.direction = DIRECTION_LEFT
-                DISPLAY "LEFT"
             ON ACTION set_direction_right ATTRIBUTES(ACCELERATOR="Right")
                 LET player.direction = DIRECTION_RIGHT
-                DISPLAY "RIGHT"
             
             ON TIMER TICK_SPEED
                 IF (is_game_running) THEN
+                    CALL ui.Interface.refresh()
                     CALL _move_snake()
                     CALL _display()
                     CALL ui.Interface.refresh()
@@ -147,12 +151,14 @@ PRIVATE FUNCTION _display()
     
     LET screen_length = screen.getLength()
     LET screen_height = screen[screen_length].getLength()
+    DISPLAY "screen_height", screen_height, " screen_length", screen_length
     FOR i = screen_height TO 1 STEP -1
+    #FOR i = 1 TO screen_height
         LET row = ""
         FOR j = 1 TO screen_length
-            LET row = row, screen[j,i]
+            LET row = row, screen[j, i]
         END FOR
-        LET screen_rows[i] = row
+        LET screen_rows[Y_MAXIMUM + 1 - i] = row
         #DISPLAY row
     END FOR
 
@@ -167,12 +173,21 @@ PRIVATE FUNCTION _draw_snake(
     DEFINE
         i INTEGER,
         array_length INTEGER
-        
+
     LET screen[player.segments[1].x, player.segments[1].y] = TILE_SNAKE_HEAD
     
     LET array_length = player.segments.getLength()
-    
+    DISPLAY "a_length", array_length
+    IF (array_length < 2) THEN
+        RETURN
+    END IF
+
+    BREAKPOINT
     FOR i = 2 TO array_length
+        -- DISPLAY "A:",player.segments[i].x
+        -- DISPLAY "B:",player.segments[i].y
+        -- DISPLAY "C:",screen.getLength()
+        -- DISPLAY "D:",screen[i].getLength()
         LET screen[player.segments[i].x, player.segments[i].y] = TILE_SNAKE_BODY
     END FOR
     
@@ -262,39 +277,48 @@ END FUNCTION
 PRIVATE FUNCTION _move_snake()
 
     #LET player.direction = fgl_lastkey()
-
+    
+    DISPLAY "_move_snake(), direction: ", player.direction
+    LET prev_position.* = player.segments[1].*
     CASE player.direction
-        WHEN player.direction = DIRECTION_UP
-        #WHEN player.direction = key_up
+        WHEN DIRECTION_UP
             LET player.segments[1].y = player.segments[1].y + 1
-            IF (player.segments[1].y > Y_MAXIMUM) THEN
+            IF (player.segments[1].y >= Y_MAXIMUM) THEN
                 CALL _end_game()
             END IF
-        WHEN player.direction = DIRECTION_DOWN
-        #WHEN player.direction = key_down
+        WHEN DIRECTION_DOWN
             LET player.segments[1].y = player.segments[1].y - 1
-            IF (player.segments[1].y <= 0) THEN
+            IF (player.segments[1].y <= 1) THEN
                 CALL _end_game()
             END IF
-        WHEN player.direction = DIRECTION_RIGHT
-        #WHEN player.direction = key_right
+        WHEN DIRECTION_RIGHT
             LET player.segments[1].x = player.segments[1].x + 1
-            IF (player.segments[1].x > X_MAXIMUM) THEN
+            IF (player.segments[1].x >= X_MAXIMUM) THEN
                 CALL _end_game()
             END IF
-        WHEN player.direction = DIRECTION_LEFT
-        #WHEN player.direction = key_left
+        WHEN DIRECTION_LEFT
             LET player.segments[1].x = player.segments[1].x - 1
-            IF (player.segments[1].x <= 0) THEN
+            IF (player.segments[1].x <= 1) THEN
                 CALL _end_game()
             END IF
         #OTHERWISE
     END CASE
-
-    CALL _update_snake_segments()
+    CALL _print_snake_location("Z")
     CALL _check_fruits()
+    CALL _update_snake_segments()
     
 
+END FUNCTION
+
+
+
+PRIVATE FUNCTION _print_snake_location(caller STRING)
+    DISPLAY SFMT("--> call:%1    dir:%2 x:%3 y:%4",
+            caller,
+            player.direction,
+            player.segments[1].x,
+            player.segments[1].y
+        )
 END FUNCTION
 
 
@@ -302,12 +326,23 @@ END FUNCTION
 PRIVATE FUNCTION _update_snake_segments()
     DEFINE
         i INTEGER,
-        snake_length INTEGER
+        snake_length INTEGER,
+        temp_coordinate COORDINATE
 
     LET snake_length = player.segments.getLength()
+
+    IF (snake_length < 2) THEN
+        RETURN
+    END IF
+
     FOR i = 2 TO snake_length
-        LET player.segments[i].x = player.segments[i - 1].x
-        LET player.segments[i].y = player.segments[i - 1].y
+        #Ignoring the edge case that you can append multiple body
+        #LET temp_coordinate.x = player.segments[i - 1].x
+        #LET temp_coordinate.y = player.segments[i - 1].y
+
+        LET temp_coordinate.* = player.segments[i].*
+        LET player.segments[i].* = prev_position.*        
+        LET prev_position.* = temp_coordinate.*
     END FOR
 
 END FUNCTION
