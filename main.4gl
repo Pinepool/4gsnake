@@ -93,7 +93,6 @@ PRIVATE FUNCTION _run_dialog()
                     CALL _move_snake()
                     CALL _display()
                     CALL ui.Interface.refresh()
-                    SLEEP 1
                 ELSE
                     CALL _game_over()
                     EXIT DIALOG
