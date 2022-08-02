@@ -396,8 +396,8 @@ PRIVATE FUNCTION _add_fruit()
     CALL fruits.appendElement()
 
     WHILE (NOT valid_position)
-        LET position.x = util.Math.rand(X_MAXIMUM)
-        LET position.y = util.Math.rand(Y_MAXIMUM)
+        LET position.x = util.Math.rand(X_MAXIMUM - 2) + 2
+        LET position.y = util.Math.rand(Y_MAXIMUM - 2) + 2
 
         IF (NOT _in_snake(position.*)) THEN
             IF (NOT _in_fruits(position.*)) THEN
