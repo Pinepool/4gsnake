@@ -45,6 +45,8 @@ END RECORD
 DEFINE
     score INTEGER,
     player SNAKE,
+    next_direction INTEGER,
+    intended_direction INTEGER,
     fruits DYNAMIC ARRAY OF COORDINATE,
     is_game_running BOOLEAN,
     key_up, key_down, key_right, key_left INTEGER,
@@ -79,17 +81,22 @@ PRIVATE FUNCTION _run_dialog()
             
             
             ON ACTION set_direction_up ATTRIBUTES(ACCELERATOR="Up")
-                LET player.direction = DIRECTION_UP
+                #LET player.direction = DIRECTION_UP
+                CALL _set_player_direction(DIRECTION_UP)
             ON ACTION set_direction_down ATTRIBUTES(ACCELERATOR="Down")
-                LET player.direction = DIRECTION_DOWN
+                #LET player.direction = DIRECTION_DOWN
+                CALL _set_player_direction(DIRECTION_DOWN)
             ON ACTION set_direction_left ATTRIBUTES(ACCELERATOR="Left")
-                LET player.direction = DIRECTION_LEFT
+                #LET player.direction = DIRECTION_LEFT
+                CALL _set_player_direction(DIRECTION_LEFT)
             ON ACTION set_direction_right ATTRIBUTES(ACCELERATOR="Right")
-                LET player.direction = DIRECTION_RIGHT
+                #LET player.direction = DIRECTION_RIGHT
+                CALL _set_player_direction(DIRECTION_RIGHT)
             
             ON TIMER TICK_SPEED
                 IF (is_game_running) THEN
                     CALL ui.Interface.refresh()
+                    LET player.direction = next_direction
                     CALL _move_snake()
                     CALL _display()
                     CALL ui.Interface.refresh()
@@ -248,6 +255,7 @@ PRIVATE FUNCTION _initialize()
     LET start_position.y = Y_MAXIMUM / 2
 
     LET player.segments[1].* = start_position.*
+    LET player.direction = DIRECTION_UP
 
     FOR i = 1 TO MAX_FRUITS
         #CALL fruits.appendElement()
@@ -260,6 +268,9 @@ PRIVATE FUNCTION _initialize()
     LET key_left = fgl_keyval("LEFT")
     
     LET key_q = fgl_keyval("CONTROL-Q")
+    
+    LET intended_direction = DIRECTION_UP
+    LET next_direction = DIRECTION_UP
     
     LET is_game_running = TRUE
 
@@ -451,5 +462,27 @@ END FUNCTION
 
 
 PRIVATE FUNCTION _update_score()
-    LET score = player.segments.getLength()
+    LET score = player.segments.getLength() - 1
+END FUNCTION
+
+
+
+PRIVATE FUNCTION _set_player_direction(intended_direction INTEGER)
+
+    IF (intended_direction == DIRECTION_UP)
+        OR (intended_direction == DIRECTION_DOWN)
+    THEN
+        IF (player.direction == DIRECTION_LEFT)
+            OR (player.direction == DIRECTION_RIGHT)
+        THEN
+            LET next_direction = intended_direction
+        END IF
+    ELSE
+        IF (player.direction == DIRECTION_UP)
+            OR (player.direction == DIRECTION_DOWN)
+        THEN
+            LET next_direction = intended_direction
+        END IF
+    END IF
+
 END FUNCTION
