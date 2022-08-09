@@ -24,11 +24,14 @@ SCREEN
 [f01                 ]
 [f01                 ]
 --------------------
+[l01  ][f02          ]
 }
 END
 
 ATTRIBUTES
     EDIT f01 = FORMONLY.row_01, NOENTRY;
+    EDIT f02 = FORMONLY.row_02, NOENTRY;
+    LABEL l01: label01, TEXT="Score:", SIZEPOLICY=DYNAMIC;
 END
 
 INSTRUCTIONS
@@ -36,4 +39,6 @@ INSTRUCTIONS
     (
         FORMONLY.row_01
     );
+    
+    SCREEN RECORD score (FORMONLY.row02);
 END
