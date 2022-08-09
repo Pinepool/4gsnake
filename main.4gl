@@ -463,6 +463,7 @@ END FUNCTION
 
 PRIVATE FUNCTION _update_score()
     LET score = player.segments.getLength() - 1
+    DISPLAY score TO sr_score
 END FUNCTION
 
 
