@@ -1,5 +1,5 @@
 # 4gsnake
-4gl Snake
+4gl Snake by Pinepool (Elijah L 2022)
 
 Fun project I started when new to Genero
 Quite possibly the first ever snake coded in genero :)
