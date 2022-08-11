@@ -11,10 +11,18 @@ Code might not even compile on your machine
 
 ### Controls
 * Up / Down / Right / Left
+  * Press the same direction you are heading in to skip a move (might have disastrous effects)
 * E to restart
 * Q to quit
 
 ### Some features
+* A game of snake
+* Multiple fruit
+* Walls
+* Snake collision
+* Restart, Quit
+* Score
+* "Fast Forward" movement
 
 ### Some enhancements you could make:
 * Redo the whole thing from scratch - code 🍝
