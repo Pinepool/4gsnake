@@ -49,8 +49,6 @@ DEFINE
     intended_direction INTEGER,
     fruits DYNAMIC ARRAY OF COORDINATE,
     is_game_running BOOLEAN,
-    key_up, key_down, key_right, key_left INTEGER,
-    key_q INTEGER,
     x_inner_max INTEGER,
     y_inner_max INTEGER,
     screen_rows DYNAMIC ARRAY OF STRING,
@@ -64,11 +62,8 @@ MAIN
 
     CLOSE WINDOW SCREEN
     OPEN WINDOW main_window WITH FORM "screen"
-    #ATTRIBUTES (STYLE="*")
-    
+
     CALL _run_dialog()
-    
-    #CALL _run_game()
 
 END MAIN
 
@@ -81,34 +76,25 @@ PRIVATE FUNCTION _run_dialog()
         DISPLAY ARRAY screen_rows TO sr_display.*
             BEFORE DISPLAY
                 CALL _initialize()
-                #CALL _run_game()
-            
-            
-            ON ACTION set_direction_up ATTRIBUTES(ACCELERATOR="Up")
-                #LET player.direction = DIRECTION_UP
+
+            ON ACTION set_direction_up ATTRIBUTES(ACCELERATOR="Up", DEFAULTVIEW=NO)
                 CALL _set_player_direction(DIRECTION_UP)
-            ON ACTION set_direction_down ATTRIBUTES(ACCELERATOR="Down")
-                #LET player.direction = DIRECTION_DOWN
+            ON ACTION set_direction_down ATTRIBUTES(ACCELERATOR="Down", DEFAULTVIEW=NO)
                 CALL _set_player_direction(DIRECTION_DOWN)
-            ON ACTION set_direction_left ATTRIBUTES(ACCELERATOR="Left")
-                #LET player.direction = DIRECTION_LEFT
+            ON ACTION set_direction_left ATTRIBUTES(ACCELERATOR="Left", DEFAULTVIEW=NO)
                 CALL _set_player_direction(DIRECTION_LEFT)
-            ON ACTION set_direction_right ATTRIBUTES(ACCELERATOR="Right")
-                #LET player.direction = DIRECTION_RIGHT
+            ON ACTION set_direction_right ATTRIBUTES(ACCELERATOR="Right", DEFAULTVIEW=NO)
                 CALL _set_player_direction(DIRECTION_RIGHT)
-            
+
+            ON ACTION restart_game ATTRIBUTES(ACCELERATOR="E", DEFAULTVIEW=NO)
+                CALL _initialize()
+
+            ON ACTION quit_game ATTRIBUTES(ACCELERATOR="Q", DEFAULTVIEW=NO)
+                EXIT DIALOG
+
             ON TIMER TICK_SPEED
-                IF (is_game_running) THEN
-                    CALL ui.Interface.refresh()
-                    LET player.direction = next_direction
-                    CALL _move_snake()
-                    CALL _display()
-                    CALL ui.Interface.refresh()
-                ELSE
-                    CALL _game_over()
-                    EXIT DIALOG
-                END IF
-            
+                CALL _game_tick()
+
             ON ACTION close
                 EXIT DIALOG
 
@@ -119,17 +105,18 @@ END FUNCTION
 
 
 
-PRIVATE FUNCTION _run_game()
+PRIVATE FUNCTION _game_tick()
 
-    CALL _initialize()
-
-    WHILE (is_game_running)
+    IF (is_game_running) THEN
+        #CALL ui.Interface.refresh()
+        LET player.direction = next_direction
         CALL _move_snake()
         CALL _display()
-        SLEEP 1
-    END WHILE
-
-    CALL _game_over()
+        CALL ui.Interface.refresh()
+    ELSE
+        CALL _game_over()
+        #EXIT DIALOG
+    END IF
 
 END FUNCTION
 
@@ -161,7 +148,7 @@ PRIVATE FUNCTION _display()
     
     LET screen_length = screen.getLength()
     LET screen_height = screen[screen_length].getLength()
-    DISPLAY "screen_height", screen_height, " screen_length", screen_length
+    #DISPLAY "screen_height", screen_height, " screen_length", screen_length
     FOR i = screen_height TO 1 STEP -1
     #FOR i = 1 TO screen_height
         LET row = ""
@@ -187,7 +174,7 @@ PRIVATE FUNCTION _draw_snake(
     LET screen[player.segments[1].x, player.segments[1].y] = TILE_SNAKE_HEAD
     
     LET array_length = player.segments.getLength()
-    DISPLAY "a_length", array_length
+    #DISPLAY "a_length", array_length
     IF (array_length < 2) THEN
         RETURN
     END IF
@@ -255,6 +242,10 @@ PRIVATE FUNCTION _initialize()
         start_position COORDINATE,
         i INTEGER
 
+    CALL util.math.srand()
+    CALL player.segments.clear()
+    CALL fruits.clear()
+
     LET start_position.x = X_MAXIMUM / 2
     LET start_position.y = Y_MAXIMUM / 2
 
@@ -266,13 +257,6 @@ PRIVATE FUNCTION _initialize()
         CALL _add_fruit()
     END FOR
 
-    LET key_up = fgl_keyval("UP")
-    LET key_down = fgl_keyval("DOWN")
-    LET key_right = fgl_keyval("RIGHT")
-    LET key_left = fgl_keyval("LEFT")
-    
-    LET key_q = fgl_keyval("CONTROL-Q")
-    
     LET intended_direction = DIRECTION_UP
     LET next_direction = DIRECTION_UP
     
@@ -292,7 +276,7 @@ PRIVATE FUNCTION _move_snake()
 
     #LET player.direction = fgl_lastkey()
     
-    DISPLAY "_move_snake(), direction: ", player.direction
+    #DISPLAY "_move_snake(), direction: ", player.direction
     LET prev_position.* = player.segments[1].*
     CASE player.direction
         WHEN DIRECTION_UP
@@ -317,10 +301,10 @@ PRIVATE FUNCTION _move_snake()
             END IF
         #OTHERWISE
     END CASE
-    CALL _print_snake_location("Z")
+    #CALL _print_snake_location("Z")
     CALL _check_fruits()
     CALL _update_snake_segments()
-    
+    CALL _check_snake_self_collision()
 
 END FUNCTION
 
@@ -333,6 +317,31 @@ PRIVATE FUNCTION _print_snake_location(caller STRING)
             player.segments[1].x,
             player.segments[1].y
         )
+END FUNCTION
+
+
+
+PRIVATE FUNCTION _check_snake_self_collision()
+
+    DEFINE
+        i INTEGER,
+        snake_length INTEGER
+
+    LET snake_length = player.segments.getLength()
+
+    IF snake_length < 4
+    THEN
+        RETURN
+    END IF
+
+    FOR i = 4 TO snake_length
+        IF (player.segments[i].* == player.segments[1].*)
+        THEN
+            CALL _end_game()
+            RETURN
+        END IF
+    END FOR
+
 END FUNCTION
 
 
@@ -473,6 +482,13 @@ END FUNCTION
 
 
 PRIVATE FUNCTION _set_player_direction(intended_direction INTEGER)
+
+    IF (intended_direction == next_direction)
+    THEN
+        # fast forward since the direction is the same
+        CALL _game_tick()
+        RETURN
+    END IF
 
     IF (intended_direction == DIRECTION_UP)
         OR (intended_direction == DIRECTION_DOWN)
