@@ -19,6 +19,7 @@ Code might not even compile on your machine
 ### Some enhancements you could make:
 * Redo the whole thing from scratch - code 🍝
 * Two players?
+* How the heck does encoding work - make it prettier than basic ASCII
 
 Note: This was initially started (and the bulk of the programming done)
   one month after my being introduced to Genero so it's full of wonderful jank
